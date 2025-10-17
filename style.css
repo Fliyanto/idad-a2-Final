@@ -1,9 +1,18 @@
-/* ==============================
+/* ============================================================
    style.css — Floating Bubbles UI
-   (instrument + info modal variants)
-   ============================== */
+   Purpose: layout, visuals, modal styles, and control sizing
+   Notes:
+   - Header buttons and volume orbs are accessibility-sized
+   - Batik background renders behind all interactive content
+   - Info modal has a single-column card variant
+   - “Cool Mist” background applied to Creator’s Note modal only
+   ============================================================ */
 
-/* -------- Design tokens -------- */
+/* ============================================================
+   01) DESIGN TOKENS
+   - Colors, shadows, and global sizing variables
+   - Control scale knobs (buttons/orbs/labels) near bottom of :root
+   ============================================================ */
 :root {
   --bg-top: #eef2f7;
   --bg-bottom: #e6ebf2;
@@ -13,16 +22,16 @@
 
   --card: #ffffff;
 
-  --ring: #2563eb;
+  --ring: #2563eb; /* focus ring hue */
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
   --shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.3);
 
-  --liquid: #0ea5e9;
+  --liquid: #0ea5e9; /* volume liquid fill */
   --accent: #374151;
 
-  /* About modal accents */
+  /* Info modal accent palette */
   --accent-ink: #0f172a;
   --accent-1: #bfdbfe;
   --accent-2: #c7d2fe;
@@ -30,7 +39,7 @@
   --card-grad-a: #ffffff;
   --card-grad-b: #f6f8ff;
 
-  /* Batik controls */
+  /* Batik background tuning */
   --batik-opacity: 0.22; /* overall strength of pattern */
   --batik-blur: 2px; /* soften busy lines */
   --batik-sat: 0.25; /* desaturate (0 = gray) */
@@ -39,9 +48,30 @@
   --wash-top: rgba(255, 255, 255, 0.55);
   --wash-mid: rgba(255, 255, 255, 0.4);
   --wash-bot: rgba(255, 255, 255, 0.55);
+
+  /* === Accessibility scaling for controls ===
+     Increase these vars to upsize all controls globally. */
+  --btn-font-size: clamp(1rem, 2.2vw, 1.15rem);
+  --btn-pad-y: 0.7rem;
+  --btn-pad-x: 1.1rem;
+  --btn-radius: 0.8rem;
+
+  --orb-size: 84px; /* desktop orb diameter (was 58px) */
+  --orb-size-sm: 72px; /* small-screen orb size (was 54px) */
+  --orb-icon: 1.25rem; /* icon size inside orb */
+  --label-font: 1.05rem; /* label under orb */
+  --cluster-gap: 1.15rem; /* spacing between orbs */
+
+  /* === Creator’s Note “Cool Mist” palette === */
+  --info-bg-top: #f6faff; /* very light blue */
+  --info-bg-bot: #ecf3ff; /* soft mist blue */
+  --info-card-border: #dce8ff; /* pale blue border for white cards */
 }
 
-/* -------- Base layout -------- */
+/* ============================================================
+   02) BASE LAYOUT
+   - Full-viewport canvas with gradient background
+   ============================================================ */
 html,
 body {
   height: 100%;
@@ -51,7 +81,7 @@ body {
     sans-serif;
   color: var(--text);
   background: linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
-  overflow: hidden;
+  overflow: hidden; /* keep bubbles contained visually */
 }
 .app {
   position: relative;
@@ -59,53 +89,66 @@ body {
   height: 100vh;
 }
 
-/* -------- Header (PINNED) -------- */
+/* ============================================================
+   03) HEADER (PINNED)
+   - Sound + Help buttons in a glassy chip
+   ============================================================ */
 .app-header {
   position: fixed;
-  top: 0.65rem;
-  left: 0.65rem;
+  top: 0.9rem;
+  left: 0.9rem;
   display: flex;
-  gap: 0.5rem;
-  z-index: 200;
-  padding: 0.35rem 0.45rem;
-  background: rgba(255, 255, 255, 0.6);
+  gap: 0.7rem;
+  z-index: 200; /* above stage */
+  padding: 0.5rem 0.6rem;
+  background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(8px);
   border: 1px solid #e5e7eb;
-  border-radius: 0.6rem;
+  border-radius: 0.9rem;
   box-shadow: var(--shadow);
 }
 .btn {
   border: 1px solid #d1d5db;
   background: #f9fafb;
   color: var(--text);
-  padding: 0.45rem 0.75rem;
-  border-radius: 0.55rem;
+  padding: var(--btn-pad-y) var(--btn-pad-x);
+  border-radius: var(--btn-radius);
   cursor: pointer;
   font: inherit;
+  font-size: var(--btn-font-size);
+  line-height: 1.1;
   box-shadow: var(--shadow-sm);
+  min-width: 6.5rem; /* stable target width */
 }
 .btn:hover {
   background: #e5e7eb;
 }
 
-/* -------- Help panel (PINNED) -------- */
+/* ============================================================
+   04) HELP PANEL (PINNED)
+   - Sits just below the header chips
+   ============================================================ */
 .help-panel {
   position: fixed;
-  top: 3.5rem;
-  left: 0.65rem;
+  top: calc(0.9rem + 3.4rem + 0.6rem);
+  left: 0.9rem;
   z-index: 190;
   background: var(--card);
   border: 1px solid #e5e7eb;
-  border-radius: 0.6rem;
-  padding: 0.75rem 1rem;
+  border-radius: 0.9rem;
+  padding: 1rem 1.15rem;
   box-shadow: var(--shadow);
-  max-width: 28rem;
+  max-width: 32rem;
+  font-size: 1rem;
 }
 .help-panel[hidden] {
   display: none;
 }
 
-/* -------- Stage -------- */
+/* ============================================================
+   05) STAGE (BUBBLE PLAYGROUND)
+   - Bordered container with layered batik background
+   ============================================================ */
 .stage {
   position: relative;
   width: 100%;
@@ -116,18 +159,18 @@ body {
   box-sizing: border-box;
 }
 
-/* Batik background: image + gentle wash layered under content */
+/* Batik background layers: image + gentle wash under content */
 .stage::before,
 .stage::after {
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none; /* never block interaction */
-  z-index: 0; /* behind bubbles/content */
+  z-index: 0; /* under everything inside stage */
 }
 .stage::before {
   background-image: url("images/batik.png");
-  background-size: cover; /* use contain if your asset is seamless tile */
+  background-size: cover; /* use 'contain' if asset is a perfect tile */
   background-repeat: no-repeat;
   background-position: center;
   transform: scale(var(--batik-scale));
@@ -153,11 +196,14 @@ body {
   z-index: 1;
 }
 
-/* -------- Instrument bubbles -------- */
+/* ============================================================
+   06) INSTRUMENT BUBBLES
+   - Positioned/animated by JS; scalable hover/focus visuals
+   ============================================================ */
 .bubble {
   position: absolute;
   width: 120px;
-  height: 120px; /* JS overrides */
+  height: 120px; /* JS overrides to random sizes */
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.75);
   box-shadow: var(--shadow);
@@ -192,7 +238,7 @@ body {
   transform: scale(1.08);
 }
 
-/* Info bubble icon */
+/* Info bubble uses emoji icon instead of image */
 .bubble[data-id="about"] .bubble-icon {
   display: block;
   width: auto;
@@ -203,7 +249,10 @@ body {
     system-ui, sans-serif;
 }
 
-/* -------- Shared modal shell -------- */
+/* ============================================================
+   07) MODAL (SHARED SHELL)
+   - Backdrop + 2-column content card for instruments
+   ============================================================ */
 .modal {
   position: fixed;
   inset: 0;
@@ -212,7 +261,7 @@ body {
   justify-content: center;
   background: rgba(15, 23, 42, 0.6);
   backdrop-filter: blur(6px);
-  z-index: 1000; /* above header/controls */
+  z-index: 1000; /* above header and volume controls */
 }
 .modal[hidden] {
   display: none;
@@ -222,7 +271,9 @@ body {
   inset: 0;
 }
 
-/* -------- Audio notice -------- */
+/* ----------------------------
+   Audio notice (first visit)
+   ---------------------------- */
 .notice-card {
   background: var(--card);
   max-width: 560px;
@@ -253,7 +304,9 @@ body {
   justify-content: flex-end;
 }
 
-/* -------- Instrument modal (two-column) -------- */
+/* ----------------------------
+   Instrument modal layout
+   ---------------------------- */
 .modal-card {
   position: relative;
   background: var(--card);
@@ -335,12 +388,20 @@ body {
   margin: 0;
 }
 
-/* -------- INFO MODAL VARIANT (single column, alternating rows) -------- */
+/* ============================================================
+   08) INFO MODAL VARIANT (CREATOR’S NOTE)
+   - Single-column card with alternating “section” rows
+   - Cool Mist background for better contrast with white cards
+   ============================================================ */
 .modal-card.is-info {
   width: min(1280px, 96vw);
   max-height: 96vh;
   border-radius: 16px;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 60%, #ffffff 100%);
+  background: linear-gradient(
+    180deg,
+    var(--info-bg-top) 0%,
+    var(--info-bg-bot) 100%
+  );
   box-shadow: 0 20px 60px rgba(2, 6, 23, 0.32);
   position: relative;
 }
@@ -348,7 +409,7 @@ body {
   grid-template-columns: 1fr;
 }
 .modal-card.is-info .modal-body {
-  padding: 2.2rem 2.4rem 2.75rem; /* extra bottom room */
+  padding: 2.2rem 2.4rem 2.75rem; /* extra bottom room for scroll affordance */
   overflow: auto;
   scroll-padding-bottom: 2rem;
 }
@@ -373,16 +434,14 @@ body {
   display: none;
 }
 
-/* Alternating “section cards” */
+/* Alternating “section cards” (left/right) — keep cards white, tint border */
 .modal-card.is-info .info-grid {
   display: grid;
   gap: 1.6rem;
 }
 .modal-card.is-info .info-row {
-  --bg: color-mix(in oklab, var(--accent-1) 10%, white);
-  --bd: color-mix(in oklab, var(--accent-1) 28%, #e5e7eb);
-  background: linear-gradient(165deg, var(--bg), white);
-  border: 1px solid var(--bd);
+  background: #ffffff; /* white card on blue wash */
+  border: 1px solid var(--info-card-border); /* cool mist border */
   border-radius: 14px;
   padding: 1rem 1.25rem 1.1rem;
   box-shadow: 0 6px 18px rgba(2, 6, 23, 0.06);
@@ -390,13 +449,11 @@ body {
   display: grid;
   gap: 0.4rem;
   line-height: 1.75;
-  position: relative; /* for the rail */
+  position: relative; /* for the accent rail */
 }
 .modal-card.is-info .info-row:nth-child(even) {
   justify-self: end;
   text-align: right;
-  --bg: color-mix(in oklab, var(--accent-2) 12%, white);
-  --bd: color-mix(in oklab, var(--accent-2) 32%, #e5e7eb);
 }
 .modal-card.is-info .info-h {
   color: var(--accent-ink);
@@ -409,7 +466,7 @@ body {
   color: #374151;
   font-size: 1.07rem;
 }
-/* Accent rail on one side only */
+/* Accent rail (left on odd, right on even) */
 .modal-card.is-info .info-row::after {
   content: "";
   position: absolute;
@@ -430,27 +487,31 @@ body {
   margin-bottom: 0.5rem;
 }
 
-/* -------- Footer -------- */
+/* ============================================================
+   09) FOOTER (SMALL CAPTION)
+   ============================================================ */
 .app-footer {
   position: absolute;
   right: 0.5rem;
   bottom: 0.5rem;
-  font-size: 0.75rem;
+  font-size: 0.85rem; /* a touch bigger for readability */
   color: var(--muted);
   z-index: 5;
 }
 
-/* ==============================
-   Volume Bubble Cluster (PINNED)
-   ============================== */
+/* ============================================================
+   10) VOLUME CLUSTER (PINNED)
+   - Two “liquid” orbs: Master & Bubbles (Instrument)
+   - Keyboard, mouse, and touch friendly (JS wires behavior)
+   ============================================================ */
 .volume-cluster {
   position: fixed;
-  left: 0.65rem;
-  bottom: 0.65rem;
+  left: 0.9rem;
+  bottom: 0.9rem;
   z-index: 200;
   display: grid;
   grid-auto-flow: column;
-  gap: 1rem;
+  gap: var(--cluster-gap);
   align-items: end;
 }
 .vol-control {
@@ -458,12 +519,12 @@ body {
   display: grid;
   grid-template-rows: auto auto;
   justify-items: center;
-  row-gap: 0.35rem;
+  row-gap: 0.5rem;
 }
 .vol-orb {
   position: relative;
-  width: 58px;
-  height: 58px;
+  width: var(--orb-size);
+  height: var(--orb-size);
   border-radius: 50%;
   border: 1px solid #e5e7eb;
   background: radial-gradient(
@@ -479,11 +540,12 @@ body {
   place-items: center;
   overflow: hidden;
   transition: transform 0.14s ease, box-shadow 0.14s ease, filter 0.14s ease;
+  touch-action: none; /* smoother pointer drag on touch devices */
 }
 .vol-orb:focus-visible {
   outline: 2px solid var(--ring);
-  outline-offset: 3px;
-  box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.22), var(--shadow);
+  outline-offset: 4px;
+  box-shadow: 0 0 0 8px rgba(37, 99, 235, 0.2), var(--shadow);
 }
 .vol-liquid {
   position: absolute;
@@ -501,39 +563,44 @@ body {
   position: absolute;
   left: -10%;
   right: -10%;
-  top: -6px;
-  height: 12px;
+  top: -8px;
+  height: 16px;
   background: radial-gradient(
     120% 60% at 50% 100%,
     rgba(255, 255, 255, 0.9),
     rgba(255, 255, 255, 0)
   );
-  opacity: 0.8;
+  opacity: 0.85;
 }
 .vol-icon {
   position: relative;
-  font-size: 1.1rem;
+  font-size: var(--orb-icon);
   pointer-events: none;
 }
 .vol-label {
-  font-size: 0.9rem;
+  font-size: var(--label-font);
   color: var(--text);
   user-select: none;
+  letter-spacing: 0.1px;
 }
 .vol-orb:hover,
 .vol-orb.is-hover {
-  transform: scale(1.06);
-  box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.18), var(--shadow);
+  transform: scale(1.08);
+  box-shadow: 0 0 0 10px rgba(37, 99, 235, 0.18), var(--shadow);
 }
 .vol-orb.is-active {
-  transform: scale(1.08);
-  box-shadow: 0 0 0 8px rgba(37, 99, 235, 0.22), var(--shadow-lg);
+  transform: scale(1.1);
+  box-shadow: 0 0 0 12px rgba(37, 99, 235, 0.22), var(--shadow-lg);
 }
 .vol-control[data-level] .vol-orb {
   filter: brightness(1.02);
 }
 
-/* -------- Responsive -------- */
+/* ============================================================
+   11) RESPONSIVE TWEAKS
+   - Collapse instrument modal to single column on narrow screens
+   - Keep controls large but slightly scaled down
+   ============================================================ */
 @media (max-width: 900px) {
   .modal-card {
     width: 94%;
@@ -561,18 +628,31 @@ body {
     text-align: left !important;
     max-width: 100%;
   }
+
+  /* Larger controls still, but scaled down a touch on small screens */
   .volume-cluster {
-    gap: 0.75rem;
-    left: 0.5rem;
-    bottom: 0.5rem;
+    gap: 0.9rem;
+    left: 0.7rem;
+    bottom: 0.7rem;
   }
   .vol-orb {
-    width: 54px;
-    height: 54px;
+    width: var(--orb-size-sm);
+    height: var(--orb-size-sm);
+  }
+  .vol-label {
+    font-size: 1rem;
+  }
+
+  .app-header {
+    top: 0.7rem;
+    left: 0.7rem;
   }
 }
 
-/* -------- Motion safety -------- */
+/* ============================================================
+   12) MOTION SAFETY
+   - Respect reduced-motion preference for hover/press transitions
+   ============================================================ */
 @media (prefers-reduced-motion: reduce) {
   .bubble,
   .bubble .bubble-icon,
@@ -581,31 +661,29 @@ body {
   }
 }
 
-/* === Batik visibility + blue tone overrides === */
+/* ============================================================
+   13) BATIK VISIBILITY + BLUE TONE OVERRIDES
+   - Optional stronger pattern + hue shift with softer wash
+   ============================================================ */
 :root {
-  /* Stronger pattern */
   --batik-opacity: 0.36; /* was ~0.22 */
   --batik-sat: 0.5; /* richer color */
   --batik-bright: 1.02; /* a touch brighter */
   --batik-blur: 1.5px; /* keep lines soft but readable */
+  --batik-hue: 210deg; /* 200–230 = different blues */
 
-  /* Blue tone (try 200–230deg for different blues) */
-  --batik-hue: 210deg;
-
-  /* Softer wash so pattern shows more */
   --wash-top: rgba(255, 255, 255, 0.35);
   --wash-mid: rgba(255, 255, 255, 0.18);
   --wash-bot: rgba(255, 255, 255, 0.45);
 }
 
-/* Re-declare filter with hue shift + updated strength */
+/* Apply hue/strength overrides to the image layer */
 .stage::before {
   filter: hue-rotate(var(--batik-hue)) saturate(var(--batik-sat))
     brightness(var(--batik-bright)) blur(var(--batik-blur)) !important;
   opacity: var(--batik-opacity) !important;
 }
-
-/* Optional: slightly lighten the edge wash so center stays readable */
+/* Lighten edge wash so center stays readable */
 .stage::after {
   background: radial-gradient(
       60% 60% at 50% 45%,
@@ -615,46 +693,46 @@ body {
     linear-gradient(180deg, var(--wash-top), var(--wash-bot)) !important;
 }
 
-/* === Bubble Hover/Focus: High-contrast LED ring + soft halo === */
+/* ============================================================
+   14) BUBBLE HOVER/FOCUS EMPHASIS
+   - Crisp navy ring + soft cyan glow for visibility
+   ============================================================ */
 :root {
-  /* Tuning dials */
-  --hover-ring-color: hsl(215 85% 25%); /* navy (crisp outer ring) */
-  --hover-ring-width: 4px; /* 3–5px works well */
-  --hover-glow-color: hsl(205 90% 60% / 0.38); /* cyan-ish soft glow */
-  --hover-glow-size: 14px; /* 10–16px halo radius */
+  --hover-ring-color: hsl(215 85% 25%); /* navy outer ring */
+  --hover-ring-width: 4px; /* thickness of ring */
+  --hover-glow-color: hsl(205 90% 60% / 0.38); /* soft cyan halo */
+  --hover-glow-size: 14px; /* halo radius */
 }
 
-/* Raise hovered/focused bubble above neighbors so ring isn't hidden */
+/* Lift hovered/active bubble above neighbors so ring isn't hidden */
 .stage .bubble:hover,
 .stage .bubble:focus-visible,
 .stage .bubble:active {
   z-index: 3;
 }
 
-/* Replace the old outline-with-shadow focus look with a crisp ring and glow */
+/* Replace outline-with-shadow with ring + glow */
 .bubble:focus-visible {
-  outline: none; /* our ring is the visible focus indicator */
+  outline: none;
 }
 
-/* Hover/focus ring + halo.
-   We layer: (1) crisp navy ring, (2) soft cyan glow, (3) your existing drop shadow. */
+/* Hover/Focus ring and glow stacked with existing drop shadow */
 .stage .bubble:hover,
 .stage .bubble:focus-visible {
   box-shadow: 0 0 0 var(--hover-ring-width) var(--hover-ring-color),
     0 0 var(--hover-glow-size) var(--hover-glow-color), var(--shadow);
-  /* keep your existing slight scale/zoom from earlier rules */
 }
 
-/* Active/pressed: keep the ring, tighten the glow so clicks feel crisp */
+/* Active/pressed: keep ring, slightly tighten glow */
 .stage .bubble:active {
   box-shadow: 0 0 0 var(--hover-ring-width) var(--hover-ring-color),
     0 0 calc(var(--hover-glow-size) * 0.65)
       color-mix(in oklab, var(--hover-glow-color) 90%, black 10%),
     var(--shadow-lg);
-  transform: scale(1.01); /* tiny press feedback; optional */
+  transform: scale(1.01); /* tiny press feedback */
 }
 
-/* Motion safety: no extra animation beyond your existing transitions */
+/* Motion safety for active press */
 @media (prefers-reduced-motion: reduce) {
   .stage .bubble:active {
     transform: none;

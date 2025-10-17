@@ -1,12 +1,19 @@
-/* =========================================
-   main.js — bubbles, modal, audio (info layout alt)
-   ========================================= */
+/* ============================================================
+   main.js — Floating Bubbles UI
+   Purpose: physics-driven bubbles, modal content, and audio
+   Notes:
+   - One AudioContext shared across lobby + instrument preview
+   - Lobby music pauses when any modal opens; resumes on close
+   - Volume UI controls Master & Instrument preview levels
+   ============================================================ */
 
 (() => {
-  /* ---------- DOM ---------- */
+  /* ============================================================
+   01) DOM LOOKUPS
+   ============================================================ */
   const stage = document.getElementById("bubbleStage");
 
-  // Instrument modal
+  // Modal + fields
   const modal = document.getElementById("instrumentModal");
   const modalClose = document.getElementById("modalClose");
   const modalImage = document.getElementById("modalImage");
@@ -20,54 +27,59 @@
   const metaPron = document.getElementById("metaPronunciation");
   const metaDate = document.getElementById("metaDate");
 
-  // Audio notice
+  // First-visit audio notice
   const audioNotice = document.getElementById("audioNotice");
   const audioNoticeOk = document.getElementById("audioNoticeOk");
   const audioNoticeMute = document.getElementById("audioNoticeMute");
   const audioNoticeDont = document.getElementById("audioNoticeDont");
 
-  // Header / help
+  // Header controls
   const muteToggle = document.getElementById("muteToggle");
   const helpToggle = document.getElementById("helpToggle");
   const helpPanel = document.getElementById("helpPanel");
 
-  // Volume (Master + Bubbles)
+  // Volume controls (Master + Instrument)
   const volControls = {
     master: document.querySelector('.vol-control[data-kind="master"]'),
     instr: document.querySelector('.vol-control[data-kind="instrument"]'),
   };
 
-  // Audio elements
+  // Audio tags
   const player = document.getElementById("player"); // instrument previews
-  const lobby = document.getElementById("lobby"); // lobby bgm
+  const lobby = document.getElementById("lobby"); // lobby background music
   player.loop = false;
   lobby.loop = true;
 
-  /* ---------- Config (physics) ---------- */
+  /* ============================================================
+   02) CONSTANTS / PHYSICS CONFIG
+   ============================================================ */
   const PHYS = {
     SIZE_MIN: 160,
     SIZE_MAX: 260,
     SPEED_MIN: 12,
     SPEED_MAX: 28,
-    EDGE_PAD: 6,
-    MAX_DT: 0.05,
-    BREATH_AMP_MIN: 0.12,
+    EDGE_PAD: 6, // keep bubbles away from stage edges
+    MAX_DT: 0.05, // clamp delta-time spikes
+    BREATH_AMP_MIN: 0.12, // idle breathing scale
     BREATH_AMP_MAX: 0.35,
-    BREATH_PER_MIN: 3.2,
+    BREATH_PER_MIN: 3.2, // seconds per breath
     BREATH_PER_MAX: 6.8,
-    SWAY_X: 0.8,
+    SWAY_X: 0.8, // gentle per-bubble sway
     SWAY_Y: 0.8,
-    BOUNCE_JITTER: 0.1,
+    BOUNCE_JITTER: 0.1, // asymmetry on collisions
   };
 
-  /* ---------- Data ---------- */
+  /* ============================================================
+   03) DATA: INSTRUMENT DEFINITIONS
+   - For "about" bubble, we render a custom info layout.
+   - For instruments, fields populate the modal and audio preview.
+   ============================================================ */
   const INSTRUMENTS = [
-    // ABOUT (special layout)
+    // Special "About" entry (no audio, no image)
     {
       id: "about",
       name: "Creator's Note:",
       isInfo: true,
-      // We'll ignore htmlDesc in favor of a structured grid:
       sections: [
         {
           h: "About Nada Nusantara",
@@ -89,7 +101,7 @@
       tracks: [],
     },
 
-    // Instruments (unchanged)
+    // Instruments (image + optional preview track)
     {
       id: "kendang",
       name: "Kendang",
@@ -107,7 +119,7 @@
       region: "Rote Island, East Nusa Tenggara",
       materials: "Bamboo, palm leaves, strings",
       description:
-        "Shaped like a blooming flower, the sasando is a harp-like instrument that sings with the winds of Rote Island. Made from bamboo with palm leaf resonators, it has a magical, delicate sound that once entertained kings. Traditionally used in lullabies and love songs, the sasando is now played on global stages, bringing the warmth of East Indonesia to the world!",
+        "Shaped like a blooming flower, the sasando is a harp-like instrument that sings with the winds of Rote Island...",
       pronunciation: "sah-sahn-do",
       date: "1673 CE",
       tracks: [],
@@ -118,7 +130,7 @@
       region: "West Java (Sundanese)",
       materials: "Bamboo",
       description:
-        "The angklung is a bamboo rattle that turns shaking into symphony! Each instrument plays one note, so teamwork is key—just like a musical relay race. Used in ceremonies, education, and world peace events, the angklung is so iconic, it's recognized by UNESCO as a cultural treasure. Its joyful clatter has echoed across villages for centuries.",
+        "The angklung is a bamboo rattle that turns shaking into symphony! ...",
       pronunciation: "ahng-kloong",
       date: "13th century (first record: 1300s CE)",
       tracks: ["audio/angklungAudio.mp3"],
@@ -129,7 +141,7 @@
       region: "Java & Bali",
       materials: "Bronze",
       description:
-        "Meet the mighty gong ageng—the grandparent of all gongs! It's the biggest and deepest-toned gong in the gamelan, marking the end of musical cycles with a majestic boom. Its sound isn’t just musical—it’s spiritual, believed to connect the human and divine. Crafted with care by master bronze-smiths, each gong is a sacred presence in ceremonies.",
+        "Meet the mighty gong ageng—the grandparent of all gongs! ...",
       pronunciation: "gong ah-guhng",
       date: "900 CE",
       tracks: ["audio/gongAudio.mp3"],
@@ -140,7 +152,7 @@
       region: "North Sulawesi (Minahasa)",
       materials: "Local light wood (wunu, cempaka)",
       description:
-        "The kolintang is a wooden xylophone that brings joy with every tap! Originating from Minahasa, it was once used in ancestor worship and later evolved into a community instrument for weddings and church services. With its bright, bell-like tones, it creates melodies that dance through the air. Modern kolintang ensembles now include bass and melody instruments!",
+        "The kolintang is a wooden xylophone that brings joy with every tap! ...",
       pronunciation: "koh-lin-tahng",
       date: "1650 CE",
       tracks: ["audio/kolintangAudio.mp3"],
@@ -150,8 +162,7 @@
       name: "Suling",
       region: "Across Indonesia (notably West Java, Bali)",
       materials: "Bamboo",
-      description:
-        "The suling is a breath of bamboo magic. This end-blown flute produces sweet, airy tones that can sound like birdsong or a soft whisper. Played solo or with gamelan, it’s a key part of Sundanese and Balinese music. The suling is lightweight but emotionally powerful—often used in moments of reflection or peace.",
+      description: "The suling is a breath of bamboo magic. ...",
       pronunciation: "soo-ling",
       date: "800 CE",
       tracks: ["audio/sulingAudio.mp3"],
@@ -162,14 +173,16 @@
       region: "Java & Bali",
       materials: "Bronze bars, wooden frame, mallet",
       description:
-        "Part of the mighty gamelan family, the gender and saron are melodic metallophones with shimmering sounds. The saron plays strong, clear notes—like a melodic skeleton—while the gender adds ornamentation with its fast, flowing tones. Together, they form the storytelling voice of gamelan music, used in ceremonies, dance, and shadow puppetry.",
+        "Part of the mighty gamelan family, the gender and saron are melodic metallophones with shimmering sounds...",
       pronunciation: "gen-dair / sah-ron",
       date: "800 CE",
       tracks: ["audio/gamelanAudio.mp3"],
     },
   ];
 
-  /* ---------- Helpers ---------- */
+  /* ============================================================
+   04) SMALL HELPERS
+   ============================================================ */
   const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
   const rand = (a, b) => Math.random() * (b - a) + a;
@@ -181,17 +194,17 @@
     };
   };
 
+  // Smoothly fade + pause lobby music
   function pauseLobby(ms = 250) {
     if (!lobbyGain || !audioCtx) return;
     const t = audioCtx.currentTime;
     lobbyGain.gain.cancelScheduledValues(t);
     lobbyGain.gain.setValueAtTime(lobbyGain.gain.value, t);
     lobbyGain.gain.linearRampToValueAtTime(0, t + ms / 1000);
-    setTimeout(() => {
-      lobby.pause();
-    }, ms + 20);
+    setTimeout(() => lobby.pause(), ms + 20);
   }
 
+  // Smoothly resume lobby music (honours muted state)
   function resumeLobby(ms = 400) {
     if (!lobbyGain || !audioCtx) return;
     try {
@@ -204,9 +217,12 @@
     lobbyGain.gain.linearRampToValueAtTime(target, t + ms / 1000);
   }
 
-  /* ---------- Bubbles ---------- */
+  /* ============================================================
+   05) BUBBLES: INIT, ANIMATION, COLLISIONS
+   ============================================================ */
   const bubbles = [];
 
+  // Position, velocity, idle-breath params per bubble
   function initBubbles() {
     const nodes = [...stage.querySelectorAll(".bubble")];
     const { w: W, h: H } = stageSize();
@@ -214,6 +230,7 @@
       const size = Math.round(rand(PHYS.SIZE_MIN, PHYS.SIZE_MAX));
       el.style.width = `${size}px`;
       el.style.height = `${size}px`;
+
       const half = size / 2;
       const cx = rand(
         PHYS.EDGE_PAD + half,
@@ -223,20 +240,24 @@
         PHYS.EDGE_PAD + half,
         Math.max(PHYS.EDGE_PAD + half, H - (PHYS.EDGE_PAD + half))
       );
-      const ang = rand(0, Math.PI * 2),
-        speed = rand(PHYS.SPEED_MIN, PHYS.SPEED_MAX);
-      const vx = Math.cos(ang) * speed,
-        vy = Math.sin(ang) * speed;
+
+      const ang = rand(0, Math.PI * 2);
+      const speed = rand(PHYS.SPEED_MIN, PHYS.SPEED_MAX);
+      const vx = Math.cos(ang) * speed;
+      const vy = Math.sin(ang) * speed;
+
       const amp = rand(PHYS.BREATH_AMP_MIN, PHYS.BREATH_AMP_MAX);
       const per = rand(PHYS.BREATH_PER_MIN, PHYS.BREATH_PER_MAX);
-      const omega = (Math.PI * 2) / per,
-        phase = rand(0, Math.PI * 2);
+      const omega = (Math.PI * 2) / per;
+      const phase = rand(0, Math.PI * 2);
       const swaySeed = rand(-1000, 1000);
+
       const s = 1 + amp * Math.sin(phase);
       el.style.transform = `translate(${cx - size / 2}px, ${
         cy - size / 2
       }px) scale(${s})`;
       el.style.transformOrigin = "center center";
+
       bubbles.push({
         el,
         w: size,
@@ -253,29 +274,35 @@
     });
   }
 
+  // Basic circle collision response w/ jitter
   function collidePairs() {
     for (let i = 0; i < bubbles.length; i++) {
       for (let j = i + 1; j < bubbles.length; j++) {
         const a = bubbles[i],
           b = bubbles[j];
-        const sa = 1 + a.amp * Math.sin(a.phase),
-          sb = 1 + b.amp * Math.sin(b.phase);
+        const sa = 1 + a.amp * Math.sin(a.phase);
+        const sb = 1 + b.amp * Math.sin(b.phase);
         const ra = (a.w * sa) / 2,
           rb = (b.w * sb) / 2;
+
         const dx = b.cx - a.cx,
           dy = b.cy - a.cy;
         const dist = Math.hypot(dx, dy),
           minDist = ra + rb;
         if (dist > 0.0001 && dist < minDist) {
           const nx = dx / dist,
-            ny = dy / dist,
-            overlap = (minDist - dist) / 2;
+            ny = dy / dist;
+          const overlap = (minDist - dist) / 2;
+
+          // push apart
           a.cx -= nx * overlap;
           a.cy -= ny * overlap;
           b.cx += nx * overlap;
           b.cy += ny * overlap;
-          const avn = a.vx * nx + a.vy * ny,
-            bvn = b.vx * nx + b.vy * ny;
+
+          // swap normal components, keep tangential
+          const avn = a.vx * nx + a.vy * ny;
+          const bvn = b.vx * nx + b.vy * ny;
           const atx = a.vx - avn * nx,
             aty = a.vy - avn * ny;
           const btx = b.vx - bvn * nx,
@@ -284,6 +311,7 @@
           a.vy = aty + bvn * ny;
           b.vx = btx + avn * nx;
           b.vy = bty + avn * ny;
+
           const j = PHYS.BOUNCE_JITTER;
           a.vx *= 1 + (Math.random() - 0.5) * j;
           a.vy *= 1 + (Math.random() - 0.5) * j;
@@ -294,18 +322,24 @@
     }
   }
 
+  // Animation loop: integrate motion, confine to stage, render transforms
   let last = performance.now();
   function animate(now) {
     let dt = (now - last) / 1000;
     last = now;
     dt = Math.min(dt, PHYS.MAX_DT);
+
     const { w: W, h: H } = stageSize();
+
+    // integrate + edge bounce
     for (const b of bubbles) {
       b.phase += b.omega * dt;
       const s = 1 + b.amp * Math.sin(b.phase);
       const half = (b.w * s) / 2;
+
       b.cx += b.vx * dt;
       b.cy += b.vy * dt;
+
       if (b.cx - half <= PHYS.EDGE_PAD) {
         b.cx = PHYS.EDGE_PAD + half;
         b.vx = Math.abs(b.vx);
@@ -323,7 +357,10 @@
         b.vy = -Math.abs(b.vy);
       }
     }
+
     collidePairs();
+
+    // render
     for (const b of bubbles) {
       const s = 1 + b.amp * Math.sin(b.phase);
       const sx = Math.sin(now / 900 + b.swaySeed) * PHYS.SWAY_X;
@@ -333,10 +370,16 @@
       b.el.style.transform = `translate(${x}px, ${y}px) scale(${s})`;
       b.el.style.transformOrigin = "center center";
     }
+
     requestAnimationFrame(animate);
   }
 
-  /* ---------- Audio plumbing (Master + Bubbles + Lobby) ---------- */
+  /* ============================================================
+   06) AUDIO GRAPH (WebAudio): MASTER, INSTRUMENT, LOBBY
+   - Master gain respects Muted toggle
+   - Instrument gain controls preview volume only
+   - Lobby gain is faded separately (pause/resume helpers)
+   ============================================================ */
   let audioCtx, masterGain, instrGain, lobbyGain, instrSrc, lobbySrc;
   let isMuted = localStorage.getItem("prefMuted") === "1";
 
@@ -378,6 +421,7 @@
     }
   }
 
+  // Generic fade helper (used by lobby + previews)
   async function fadeTo(elem, gainNode, targetGain, ms) {
     await resumeAudio();
     try {
@@ -392,6 +436,7 @@
     );
   }
 
+  // Fade out and pause (optionally reset currentTime)
   function fadeOut(elem, gainNode, ms, reset = true) {
     if (!audioCtx || !gainNode) {
       elem.pause();
@@ -408,7 +453,11 @@
     }, ms + 30);
   }
 
-  /* ---------- Volume (two orbs) ---------- */
+  /* ============================================================
+   07) VOLUME ORBS (Master & Instrument)
+   - Pointer drag, wheel, and keyboard accessible
+   - Persisted to localStorage
+   ============================================================ */
   let masterPct = clamp(
     parseInt(localStorage.getItem("vol_master_pct") ?? "100", 10),
     0,
@@ -439,8 +488,9 @@
 
     masterGain.gain.setValueAtTime(isMuted ? 0 : pctToUnit(masterPct), t);
     instrGain.gain.setValueAtTime(pctToUnit(instrPct), t);
-    // lobbyGain is animated separately
+    // lobby gain is handled separately (pause/resume helpers)
   }
+
   function attachOrb(control, kind) {
     const orb = control.querySelector(".vol-orb");
     const getPct = () => (kind === "master" ? masterPct : instrPct);
@@ -452,12 +502,15 @@
       persistVolume();
       applyGainsImmediate();
     };
+
+    // Map pointer Y to percentage (top=100, bottom=0)
     function clientYtoPct(clientY) {
       const r = orb.getBoundingClientRect();
       const y = clamp(clientY, r.top, r.bottom);
       const t = 1 - (y - r.top) / (r.bottom - r.top);
       return t * 100;
     }
+
     let dragging = false;
     orb.addEventListener("pointerdown", (e) => {
       dragging = true;
@@ -475,6 +528,8 @@
       orb.classList.remove("is-active");
       orb.releasePointerCapture?.(e.pointerId);
     });
+
+    // Click & wheel
     orb.addEventListener("click", (e) => setPct(clientYtoPct(e.clientY)));
     orb.addEventListener(
       "wheel",
@@ -485,6 +540,8 @@
       },
       { passive: false }
     );
+
+    // Keyboard
     orb.setAttribute("tabindex", "0");
     orb.addEventListener("keydown", (e) => {
       let p = getPct();
@@ -501,25 +558,32 @@
       e.preventDefault();
       setPct(p);
     });
+
+    // Initial render + hover states
     updateOrbVisual(control, getPct());
     orb.addEventListener("mouseenter", () => orb.classList.add("is-hover"));
     orb.addEventListener("mouseleave", () => orb.classList.remove("is-hover"));
   }
 
-  /* ---------- Modal ---------- */
+  /* ============================================================
+   08) MODAL OPEN/CLOSE
+   - Populates content from INSTRUMENTS
+   - Pauses lobby on open; resumes on close
+   - Plays preview if a track exists
+   ============================================================ */
   let lastFocused = null;
 
   function renderAboutHTML(sections) {
-    // Build alternating rows; CSS handles layout.
+    // Build alternating info rows (layout handled by CSS)
     const rows = sections
-      .map(({ h, p }) => {
-        return `
-        <div class="info-row">
-          <h3 class="info-h">${h}</h3>
-          <p class="info-p">${p}</p>
-        </div>
-      `;
-      })
+      .map(
+        ({ h, p }) => `
+      <div class="info-row">
+        <h3 class="info-h">${h}</h3>
+        <p class="info-p">${p}</p>
+      </div>
+    `
+      )
       .join("");
     return `<div class="info-grid">${rows}</div>`;
   }
@@ -527,9 +591,13 @@
   function openModal(id) {
     const data = INSTRUMENTS.find((i) => i.id === id);
     if (!data) return;
+
     lastFocused = document.activeElement;
 
-    // Reset sections
+    // Ensure no overlap: pause lobby immediately
+    pauseLobby(250);
+
+    // Reset content state
     modalMedia.hidden = false;
     modalMeta.hidden = false;
     modalImage.src = "";
@@ -537,20 +605,16 @@
     modalCard.classList.remove("is-info");
 
     if (data.isInfo) {
-      // Info: dedicated text layout (no image/meta, single column)
+      // Info layout: text only
       modalTitle.textContent = data.name;
       modalMedia.hidden = true;
       modalMeta.hidden = true;
       modalCard.classList.add("is-info");
-
       modalDesc.innerHTML = renderAboutHTML(data.sections || []);
-
-      // restore lobby if it was ducked; no instrument audio
-      duckLobby(false);
       player.pause();
       player.src = "";
     } else {
-      // Instrument
+      // Instrument layout: image + meta + optional audio
       modalTitle.textContent = data.name;
       metaRegion.textContent = data.region || "—";
       metaMaterials.textContent = data.materials || "—";
@@ -560,8 +624,7 @@
       modalImage.src = `images/${data.id}2.png`;
       modalImage.alt = data.name;
 
-      // duck lobby while previewing
-      duckLobby(true);
+      // Preview (if track exists)
       player.pause();
       player.src = "";
       if (data.tracks && data.tracks.length) {
@@ -578,13 +641,18 @@
   function closeModal() {
     document.removeEventListener("keydown", onKey);
     modal.hidden = true;
+
+    // Stop preview + resume lobby smoothly
     fadeOut(player, instrGain, 220, /*reset=*/ true);
-    duckLobby(false);
+    resumeLobby(400);
+
     if (lastFocused && lastFocused.focus) lastFocused.focus();
   }
+
   function onKey(e) {
     if (e.key === "Escape") closeModal();
   }
+
   function currentInstrTarget() {
     return (
       clamp(
@@ -595,7 +663,9 @@
     );
   }
 
-  /* ---------- Lobby control & autoplay ---------- */
+  /* ============================================================
+   09) LOBBY AUTOPLAY (after first user gesture)
+   ============================================================ */
   let lobbyStarted = false;
   let lobbyBaseGain = 0.65;
 
@@ -606,34 +676,33 @@
     fadeTo(lobby, lobbyGain, lobbyBaseGain, 800).catch(() => {});
   }
 
-  function duckLobby(duck) {
-    if (!lobbyGain || !audioCtx) return;
-    const t = audioCtx.currentTime;
-    lobbyGain.gain.cancelScheduledValues(t);
-    const target = duck ? Math.max(0, lobbyBaseGain * 0.35) : lobbyBaseGain;
-    lobbyGain.gain.linearRampToValueAtTime(isMuted ? 0 : target, t + 0.25);
-  }
-
+  // Only start after a gesture to satisfy autoplay policies
   window.addEventListener("pointerdown", () => startLobbyIfNeeded(), {
     once: true,
   });
 
-  /* ---------- Events ---------- */
+  /* ============================================================
+   10) EVENT WIRING
+   ============================================================ */
+  // Open modal on bubble click
   stage.addEventListener("click", (e) => {
     const b = e.target.closest(".bubble");
     if (!b) return;
     openModal(b.dataset.id);
   });
 
+  // Close modal by clicking backdrop, X button, or [data-close]
   modal.addEventListener("click", (e) => {
     if (
       e.target === modal ||
       e.target === modalClose ||
       e.target.dataset.close === "true"
-    )
+    ) {
       closeModal();
+    }
   });
 
+  // Mute toggle
   muteToggle?.addEventListener("click", async () => {
     isMuted = !isMuted;
     localStorage.setItem("prefMuted", isMuted ? "1" : "0");
@@ -642,12 +711,14 @@
     await applyGainsImmediate();
   });
 
+  // Help toggle
   helpToggle?.addEventListener("click", () => {
     const exp = helpToggle.getAttribute("aria-expanded") === "true";
     helpToggle.setAttribute("aria-expanded", String(!exp));
     helpPanel.hidden = exp;
   });
 
+  // Keep bubbles within stage on resize
   window.addEventListener("resize", () => {
     const { w: W, h: H } = stageSize();
     bubbles.forEach((b) => {
@@ -658,23 +729,32 @@
     });
   });
 
-  /* ---------- Boot ---------- */
+  /* ============================================================
+   11) BOOTSTRAP
+   ============================================================ */
   window.addEventListener("load", async () => {
+    // Reflect stored mute pref in UI
     muteToggle.setAttribute("aria-pressed", String(isMuted));
     muteToggle.textContent = isMuted ? "🔇 Muted" : "🔈 Sound";
 
+    // Build audio graph + set gains
     await applyGainsImmediate();
+
+    // Activate volume orbs
     attachOrb(volControls.master, "master");
     attachOrb(volControls.instr, "instrument");
 
+    // First-visit notice (optional)
     if (localStorage.getItem("audioNoticeDismissed") !== "1") {
       audioNotice.hidden = false;
+
       audioNoticeOk?.addEventListener("click", async () => {
         if (audioNoticeDont?.checked)
           localStorage.setItem("audioNoticeDismissed", "1");
         audioNotice.hidden = true;
         startLobbyIfNeeded();
       });
+
       audioNoticeMute?.addEventListener("click", async () => {
         isMuted = true;
         localStorage.setItem("prefMuted", "1");
@@ -688,6 +768,7 @@
       });
     }
 
+    // Bubbles + animation
     initBubbles();
     requestAnimationFrame((t) => {
       last = t;
@@ -695,34 +776,3 @@
     });
   });
 })();
-
-// --- Exclusive audio: lobby vs instrument
-let activeIsInstrument = false;
-
-function hardPauseLobby(ms = 120) {
-  ensureAudio();
-  // kill gain fast, then pause element
-  const t = audioCtx.currentTime;
-  lobbyGain.gain.cancelScheduledValues(t);
-  lobbyGain.gain.setValueAtTime(lobbyGain.gain.value, t);
-  lobbyGain.gain.linearRampToValueAtTime(0, t + ms / 1000);
-  setTimeout(() => {
-    try {
-      lobby.pause();
-    } catch {}
-  }, ms + 10);
-}
-
-function fadeResumeLobby(ms = 320) {
-  ensureAudio();
-  // only resume if not in an instrument view
-  if (activeIsInstrument) return;
-  try {
-    lobby.play();
-  } catch {}
-  const t = audioCtx.currentTime;
-  lobbyGain.gain.cancelScheduledValues(t);
-  lobbyGain.gain.setValueAtTime(lobbyGain.gain.value, t);
-  const target = isMuted ? 0 : lobbyBaseGain;
-  lobbyGain.gain.linearRampToValueAtTime(target, t + ms / 1000);
-}

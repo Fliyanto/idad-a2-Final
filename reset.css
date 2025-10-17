@@ -1,9 +1,14 @@
-/* ==============================
-   reset.css — Modern CSS Reset
-   (safe defaults + a11y friendly)
-   ============================== */
+/* ============================================================
+   reset.css — Modern CSS Reset (a11y-friendly)
+   Purpose: sensible defaults, consistent box model, accessible focus,
+            minimal surprises across browsers.
+   ============================================================ */
 
-/* 1) Box sizing & tap highlight */
+/* ============================================================
+   01) BOX MODEL & TOUCH
+   - border-box everywhere
+   - remove tap highlight on mobile
+   ============================================================ */
 *,
 *::before,
 *::after {
@@ -11,12 +16,19 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* 2) Remove default margins */
+/* ============================================================
+   02) DEFAULT MARGINS
+   - strip default top/bottom around common text blocks
+   ============================================================ */
 :where(body, h1, h2, h3, h4, h5, h6, p, figure, blockquote, dl, dd) {
   margin: 0;
 }
 
-/* 3) Set sensible body defaults */
+/* ============================================================
+   03) ROOT / BODY DEFAULTS
+   - smooth scroll for keyboard users
+   - solid line-height & text rendering
+   ============================================================ */
 html:focus-within {
   scroll-behavior: smooth;
 }
@@ -28,7 +40,11 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* 4) Images, video, canvas, svg */
+/* ============================================================
+   04) MEDIA ELEMENTS
+   - block layout, scale responsively
+   - keep intrinsic aspect ratios for images
+   ============================================================ */
 img,
 picture,
 video,
@@ -38,10 +54,14 @@ svg {
   max-width: 100%;
 }
 img {
-  height: auto; /* keep intrinsic aspect */
+  height: auto; /* preserve intrinsic aspect ratio */
 }
 
-/* 5) Typography: inherit fonts for form elements */
+/* ============================================================
+   05) FORM ELEMENTS / BUTTONS
+   - inherit typography & color
+   - neutral base styles for buttons
+   ============================================================ */
 input,
 button,
 textarea,
@@ -56,32 +76,48 @@ button {
   padding: 0;
 }
 
-/* 6) Links: no default color, nice underline behavior */
+/* ============================================================
+   06) LINKS
+   - inherit color, clean underline behavior
+   ============================================================ */
 a {
   color: inherit;
   text-decoration: none;
   text-decoration-skip-ink: auto;
 }
 
-/* 7) Lists: remove default bullets/spacing; opt-in later */
+/* ============================================================
+   07) LISTS
+   - remove bullets/spacing; authors can opt-in later
+   ============================================================ */
 :where(ul, ol) {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-/* 8) Tables: border-box and no spacing */
+/* ============================================================
+   08) TABLES
+   - consistent collapse & spacing
+   ============================================================ */
 table {
   border-collapse: collapse;
   border-spacing: 0;
 }
 
-/* 9) Forms: remove default outlines only on non-keyboard focus */
+/* ============================================================
+   09) FOCUS (NON-KEYBOARD)
+   - keep outlines for :focus-visible only
+   - avoids removing useful keyboard focus indicators
+   ============================================================ */
 :focus:not(:focus-visible) {
   outline: none;
 }
 
-/* 10) Reduce motion for users who prefer it */
+/* ============================================================
+   10) REDUCED MOTION
+   - respect user preference for minimal animation
+   ============================================================ */
 @media (prefers-reduced-motion: reduce) {
   html:focus-within {
     scroll-behavior: auto;

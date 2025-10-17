@@ -1,6 +1,6 @@
 /* ==============================
    style.css — Floating Bubbles UI
-   (simplified volume orbs; hover/active glow)
+   (instrument + info modal variants)
    ============================== */
 
 /* -------- Design tokens -------- */
@@ -19,11 +19,26 @@
   --shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.3);
 
-  /* single, high-contrast ocean blue for all liquids */
   --liquid: #0ea5e9;
+  --accent: #374151;
 
-  --tube-glass: rgba(255, 255, 255, 0.9); /* kept for consistency */
-  --tube-border: rgba(0, 0, 0, 0.08);
+  /* About modal accents */
+  --accent-ink: #0f172a;
+  --accent-1: #bfdbfe;
+  --accent-2: #c7d2fe;
+  --accent-3: #a5f3fc;
+  --card-grad-a: #ffffff;
+  --card-grad-b: #f6f8ff;
+
+  /* Batik controls */
+  --batik-opacity: 0.22; /* overall strength of pattern */
+  --batik-blur: 2px; /* soften busy lines */
+  --batik-sat: 0.25; /* desaturate (0 = gray) */
+  --batik-bright: 0.96; /* slight dim */
+  --batik-scale: 1.15; /* nudge motif size */
+  --wash-top: rgba(255, 255, 255, 0.55);
+  --wash-mid: rgba(255, 255, 255, 0.4);
+  --wash-bot: rgba(255, 255, 255, 0.55);
 }
 
 /* -------- Base layout -------- */
@@ -86,6 +101,9 @@ body {
   box-shadow: var(--shadow);
   max-width: 28rem;
 }
+.help-panel[hidden] {
+  display: none;
+}
 
 /* -------- Stage -------- */
 .stage {
@@ -96,6 +114,43 @@ body {
   border: 4px solid #94a3b8;
   border-radius: 12px;
   box-sizing: border-box;
+}
+
+/* Batik background: image + gentle wash layered under content */
+.stage::before,
+.stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none; /* never block interaction */
+  z-index: 0; /* behind bubbles/content */
+}
+.stage::before {
+  background-image: url("images/batik.png");
+  background-size: cover; /* use contain if your asset is seamless tile */
+  background-repeat: no-repeat;
+  background-position: center;
+  transform: scale(var(--batik-scale));
+  filter: saturate(var(--batik-sat)) brightness(var(--batik-bright))
+    blur(var(--batik-blur));
+  opacity: var(--batik-opacity);
+}
+.stage::after {
+  /* soft wash so pattern never fights UI; brighter center, calmer edges */
+  background: radial-gradient(
+      60% 60% at 50% 45%,
+      var(--wash-mid) 0%,
+      transparent 70%
+    ),
+    linear-gradient(180deg, var(--wash-top), var(--wash-bot));
+  mix-blend-mode: normal;
+  opacity: 1;
+}
+
+/* Ensure stage children render above the batik layers */
+.stage > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* -------- Instrument bubbles -------- */
@@ -122,7 +177,6 @@ body {
   box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.25), var(--shadow);
 }
 .bubble.is-active {
-  /* while dragging */
   box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.22), var(--shadow-lg);
   transform: scale(1.02);
 }
@@ -138,7 +192,18 @@ body {
   transform: scale(1.08);
 }
 
-/* -------- Shared modal -------- */
+/* Info bubble icon */
+.bubble[data-id="about"] .bubble-icon {
+  display: block;
+  width: auto;
+  height: auto;
+  font-size: clamp(56px, 22vmin, 160px);
+  line-height: 1;
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji",
+    system-ui, sans-serif;
+}
+
+/* -------- Shared modal shell -------- */
 .modal {
   position: fixed;
   inset: 0;
@@ -147,7 +212,7 @@ body {
   justify-content: center;
   background: rgba(15, 23, 42, 0.6);
   backdrop-filter: blur(6px);
-  z-index: 100;
+  z-index: 1000; /* above header/controls */
 }
 .modal[hidden] {
   display: none;
@@ -188,7 +253,7 @@ body {
   justify-content: flex-end;
 }
 
-/* -------- Instrument modal (landscape) -------- */
+/* -------- Instrument modal (two-column) -------- */
 .modal-card {
   position: relative;
   background: var(--card);
@@ -270,6 +335,101 @@ body {
   margin: 0;
 }
 
+/* -------- INFO MODAL VARIANT (single column, alternating rows) -------- */
+.modal-card.is-info {
+  width: min(1280px, 96vw);
+  max-height: 96vh;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 60%, #ffffff 100%);
+  box-shadow: 0 20px 60px rgba(2, 6, 23, 0.32);
+  position: relative;
+}
+.modal-card.is-info .modal-content {
+  grid-template-columns: 1fr;
+}
+.modal-card.is-info .modal-body {
+  padding: 2.2rem 2.4rem 2.75rem; /* extra bottom room */
+  overflow: auto;
+  scroll-padding-bottom: 2rem;
+}
+.modal-card.is-info .modal-title {
+  color: var(--accent-ink);
+  font-weight: 900;
+  font-size: clamp(1.6rem, 3.2vw, 2rem);
+  letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
+}
+.modal-card.is-info .modal-title::after {
+  content: "";
+  display: block;
+  height: 4px;
+  width: clamp(100px, 16%, 180px);
+  margin-top: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent-2), var(--accent-3));
+}
+.modal-card.is-info .modal-media,
+.modal-card.is-info .meta {
+  display: none;
+}
+
+/* Alternating “section cards” */
+.modal-card.is-info .info-grid {
+  display: grid;
+  gap: 1.6rem;
+}
+.modal-card.is-info .info-row {
+  --bg: color-mix(in oklab, var(--accent-1) 10%, white);
+  --bd: color-mix(in oklab, var(--accent-1) 28%, #e5e7eb);
+  background: linear-gradient(165deg, var(--bg), white);
+  border: 1px solid var(--bd);
+  border-radius: 14px;
+  padding: 1rem 1.25rem 1.1rem;
+  box-shadow: 0 6px 18px rgba(2, 6, 23, 0.06);
+  max-width: 52rem;
+  display: grid;
+  gap: 0.4rem;
+  line-height: 1.75;
+  position: relative; /* for the rail */
+}
+.modal-card.is-info .info-row:nth-child(even) {
+  justify-self: end;
+  text-align: right;
+  --bg: color-mix(in oklab, var(--accent-2) 12%, white);
+  --bd: color-mix(in oklab, var(--accent-2) 32%, #e5e7eb);
+}
+.modal-card.is-info .info-h {
+  color: var(--accent-ink);
+  font-size: 1.18rem;
+  font-weight: 900;
+  margin: 0;
+}
+.modal-card.is-info .info-p {
+  margin: 0;
+  color: #374151;
+  font-size: 1.07rem;
+}
+/* Accent rail on one side only */
+.modal-card.is-info .info-row::after {
+  content: "";
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 10px;
+  width: 6px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--accent-3), transparent 75%);
+  pointer-events: none;
+  opacity: 0.9;
+}
+.modal-card.is-info .info-row:nth-child(even)::after {
+  left: auto;
+  right: 10px;
+}
+.modal-card.is-info .info-row:last-child {
+  margin-bottom: 0.5rem;
+}
+
 /* -------- Footer -------- */
 .app-footer {
   position: absolute;
@@ -282,9 +442,7 @@ body {
 
 /* ==============================
    Volume Bubble Cluster (PINNED)
-   Simplified: orbs only (no tubes)
    ============================== */
-
 .volume-cluster {
   position: fixed;
   left: 0.65rem;
@@ -295,8 +453,6 @@ body {
   gap: 1rem;
   align-items: end;
 }
-
-/* each control stacks orb over label */
 .vol-control {
   position: relative;
   display: grid;
@@ -304,8 +460,6 @@ body {
   justify-items: center;
   row-gap: 0.35rem;
 }
-
-/* orb */
 .vol-orb {
   position: relative;
   width: 58px;
@@ -331,14 +485,12 @@ body {
   outline-offset: 3px;
   box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.22), var(--shadow);
 }
-
-/* ocean-blue liquid (height controlled by JS via inline style) */
 .vol-liquid {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  height: 50%; /* overwritten dynamically */
+  height: 50%;
   background: color-mix(in oklab, var(--liquid) 85%, white);
   transition: height 0.18s ease-out, filter 0.18s ease-out;
   border-bottom-left-radius: 50%;
@@ -368,8 +520,6 @@ body {
   color: var(--text);
   user-select: none;
 }
-
-/* hover / active emphasis */
 .vol-orb:hover,
 .vol-orb.is-hover {
   transform: scale(1.06);
@@ -379,8 +529,6 @@ body {
   transform: scale(1.08);
   box-shadow: 0 0 0 8px rgba(37, 99, 235, 0.22), var(--shadow-lg);
 }
-
-/* subtle glow by level (optional; uses data-level %) */
 .vol-control[data-level] .vol-orb {
   filter: brightness(1.02);
 }
@@ -400,6 +548,19 @@ body {
   .meta-row {
     grid-template-columns: 150px 1fr;
   }
+
+  .modal-card.is-info {
+    width: 94vw;
+    max-height: 88vh;
+  }
+  .modal-card.is-info .modal-body {
+    padding: 1.4rem 1.1rem 1.6rem;
+  }
+  .modal-card.is-info .info-row {
+    justify-self: start !important;
+    text-align: left !important;
+    max-width: 100%;
+  }
   .volume-cluster {
     gap: 0.75rem;
     left: 0.5rem;
@@ -408,5 +569,94 @@ body {
   .vol-orb {
     width: 54px;
     height: 54px;
+  }
+}
+
+/* -------- Motion safety -------- */
+@media (prefers-reduced-motion: reduce) {
+  .bubble,
+  .bubble .bubble-icon,
+  .vol-orb {
+    transition: none !important;
+  }
+}
+
+/* === Batik visibility + blue tone overrides === */
+:root {
+  /* Stronger pattern */
+  --batik-opacity: 0.36; /* was ~0.22 */
+  --batik-sat: 0.5; /* richer color */
+  --batik-bright: 1.02; /* a touch brighter */
+  --batik-blur: 1.5px; /* keep lines soft but readable */
+
+  /* Blue tone (try 200–230deg for different blues) */
+  --batik-hue: 210deg;
+
+  /* Softer wash so pattern shows more */
+  --wash-top: rgba(255, 255, 255, 0.35);
+  --wash-mid: rgba(255, 255, 255, 0.18);
+  --wash-bot: rgba(255, 255, 255, 0.45);
+}
+
+/* Re-declare filter with hue shift + updated strength */
+.stage::before {
+  filter: hue-rotate(var(--batik-hue)) saturate(var(--batik-sat))
+    brightness(var(--batik-bright)) blur(var(--batik-blur)) !important;
+  opacity: var(--batik-opacity) !important;
+}
+
+/* Optional: slightly lighten the edge wash so center stays readable */
+.stage::after {
+  background: radial-gradient(
+      60% 60% at 50% 45%,
+      var(--wash-mid) 0%,
+      transparent 70%
+    ),
+    linear-gradient(180deg, var(--wash-top), var(--wash-bot)) !important;
+}
+
+/* === Bubble Hover/Focus: High-contrast LED ring + soft halo === */
+:root {
+  /* Tuning dials */
+  --hover-ring-color: hsl(215 85% 25%); /* navy (crisp outer ring) */
+  --hover-ring-width: 4px; /* 3–5px works well */
+  --hover-glow-color: hsl(205 90% 60% / 0.38); /* cyan-ish soft glow */
+  --hover-glow-size: 14px; /* 10–16px halo radius */
+}
+
+/* Raise hovered/focused bubble above neighbors so ring isn't hidden */
+.stage .bubble:hover,
+.stage .bubble:focus-visible,
+.stage .bubble:active {
+  z-index: 3;
+}
+
+/* Replace the old outline-with-shadow focus look with a crisp ring and glow */
+.bubble:focus-visible {
+  outline: none; /* our ring is the visible focus indicator */
+}
+
+/* Hover/focus ring + halo.
+   We layer: (1) crisp navy ring, (2) soft cyan glow, (3) your existing drop shadow. */
+.stage .bubble:hover,
+.stage .bubble:focus-visible {
+  box-shadow: 0 0 0 var(--hover-ring-width) var(--hover-ring-color),
+    0 0 var(--hover-glow-size) var(--hover-glow-color), var(--shadow);
+  /* keep your existing slight scale/zoom from earlier rules */
+}
+
+/* Active/pressed: keep the ring, tighten the glow so clicks feel crisp */
+.stage .bubble:active {
+  box-shadow: 0 0 0 var(--hover-ring-width) var(--hover-ring-color),
+    0 0 calc(var(--hover-glow-size) * 0.65)
+      color-mix(in oklab, var(--hover-glow-color) 90%, black 10%),
+    var(--shadow-lg);
+  transform: scale(1.01); /* tiny press feedback; optional */
+}
+
+/* Motion safety: no extra animation beyond your existing transitions */
+@media (prefers-reduced-motion: reduce) {
+  .stage .bubble:active {
+    transform: none;
   }
 }

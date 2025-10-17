@@ -2,7 +2,11 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0b1b2b" />
     <title>Indonesian Instruments - Prototype Branch</title>
 
     <link rel="stylesheet" href="reset.css" />
@@ -10,10 +14,18 @@
   </head>
 
   <body>
+    <noscript>
+      <div
+        style="padding: 1rem; background: #222; color: #fff; text-align: center"
+      >
+        This interactive site needs JavaScript enabled.
+      </div>
+    </noscript>
+
     <div class="app">
       <!-- PINNED HEADER -->
       <header class="app-header" aria-label="Top controls">
-        <button id="muteToggle" class="btn" aria-pressed="false">
+        <button id="muteToggle" class="btn" aria-pressed="false" type="button">
           🔈 Sound
         </button>
         <button
@@ -21,6 +33,7 @@
           class="btn"
           aria-expanded="false"
           aria-controls="helpPanel"
+          type="button"
         >
           ❓ Help
         </button>
@@ -32,7 +45,7 @@
         <ul>
           <li>Click a floating instrument bubble to learn about it.</li>
           <li>A popup will show info and may play a short audio clip.</li>
-          <li>Use the Sound button to mute/unmute.</li>
+          <li>Use the Sound button to mute or unmute all audio.</li>
           <li>Bottom-left: Master / Instrument volume controls.</li>
           <li>Look for the ℹ️ bubble for a quick project overview.</li>
         </ul>
@@ -40,11 +53,12 @@
 
       <!-- STAGE -->
       <main id="bubbleStage" class="stage" aria-label="Instrument bubbles">
-        <!-- INFO BUBBLE (new) -->
+        <!-- INFO BUBBLE -->
         <button
           class="bubble"
           data-id="about"
           aria-label="About Nada Nusantara"
+          type="button"
         >
           <span
             class="bubble-icon"
@@ -55,28 +69,59 @@
         </button>
 
         <!-- Existing instrument bubbles -->
-        <button class="bubble" data-id="angklung" aria-label="Angklung">
+        <button
+          class="bubble"
+          data-id="angklung"
+          aria-label="Angklung"
+          type="button"
+        >
           <img class="bubble-icon" src="images/angklung.png" alt="" />
         </button>
-        <button class="bubble" data-id="kendang" aria-label="Kendang">
+        <button
+          class="bubble"
+          data-id="kendang"
+          aria-label="Kendang"
+          type="button"
+        >
           <img class="bubble-icon" src="images/kendang.png" alt="" />
         </button>
-        <button class="bubble" data-id="gong" aria-label="Gong Ageng">
+        <button
+          class="bubble"
+          data-id="gong"
+          aria-label="Gong Ageng"
+          type="button"
+        >
           <img class="bubble-icon" src="images/gong.png" alt="" />
         </button>
-        <button class="bubble" data-id="suling" aria-label="Suling">
+        <button
+          class="bubble"
+          data-id="suling"
+          aria-label="Suling"
+          type="button"
+        >
           <img class="bubble-icon" src="images/suling.png" alt="" />
         </button>
-        <button class="bubble" data-id="sasando" aria-label="Sasando">
+        <button
+          class="bubble"
+          data-id="sasando"
+          aria-label="Sasando"
+          type="button"
+        >
           <img class="bubble-icon" src="images/sasando.png" alt="" />
         </button>
-        <button class="bubble" data-id="kolintang" aria-label="Kolintang">
+        <button
+          class="bubble"
+          data-id="kolintang"
+          aria-label="Kolintang"
+          type="button"
+        >
           <img class="bubble-icon" src="images/kolintang.png" alt="" />
         </button>
         <button
           class="bubble"
           data-id="gamelan"
           aria-label="Gamelan Gender / Saron"
+          type="button"
         >
           <img class="bubble-icon" src="images/gamelan.png" alt="" />
         </button>
@@ -87,16 +132,22 @@
         Made for spatial UI exploration — Indonesian traditional instruments.
       </footer>
 
-      <!-- INSTRUMENT MODAL (unchanged) -->
+      <!-- INSTRUMENT MODAL -->
       <section id="instrumentModal" class="modal" hidden>
-        <div class="modal-backdrop" data-close="true"></div>
+        <div class="modal-backdrop" data-close="true" aria-hidden="true"></div>
         <article
           class="modal-card"
           role="dialog"
           aria-modal="true"
           aria-labelledby="modalTitle"
+          aria-describedby="modalDesc"
         >
-          <button id="modalClose" class="modal-close" aria-label="Close">
+          <button
+            id="modalClose"
+            class="modal-close"
+            aria-label="Close"
+            type="button"
+          >
             ✕
           </button>
 
@@ -127,64 +178,9 @@
                 </div>
               </dl>
 
-              <p id="modalDesc" class="modal-desc">—</p>
+              <!-- div supports rich HTML for About -->
+              <div id="modalDesc" class="modal-desc" aria-live="polite">—</div>
             </div>
-          </div>
-        </article>
-      </section>
-
-      <!-- ABOUT MODAL (new: text-only layout) -->
-      <section id="aboutModal" class="modal" hidden>
-        <div class="modal-backdrop" data-close="true"></div>
-        <article
-          class="modal-card"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="aboutTitle"
-        >
-          <button id="aboutClose" class="modal-close" aria-label="Close">
-            ✕
-          </button>
-
-          <!-- Text-only body (no image column) -->
-          <div class="modal-body" style="padding-top: 2.2rem">
-            <h2
-              id="aboutTitle"
-              class="modal-title"
-              style="margin-bottom: 0.75rem"
-            >
-              🌊 About Nada Nusantara
-            </h2>
-
-            <p class="modal-desc" style="margin-bottom: 1rem">
-              <strong>Nada Nusantara</strong> (Melodies of the Archipelago) is
-              an interactive sound experience that brings Indonesia’s
-              traditional instruments into a digital space. It invites visitors
-              to listen, touch, and explore the rhythm of culture through
-              movement and sound.
-            </p>
-
-            <h3 style="font-size: 1.15rem; margin: 0.5rem 0 0.25rem">
-              🎵 How It Works
-            </h3>
-            <p class="modal-desc" style="margin-bottom: 1rem">
-              Each floating bubble represents an instrument. By clicking,
-              dragging, or adjusting the liquid-filled sliders, visitors can
-              create layers of sound that blend together naturally. The bubbles
-              move, collide, and respond to one another, reflecting the harmony
-              and diversity found across Indonesia’s musical traditions.
-            </p>
-
-            <h3 style="font-size: 1.15rem; margin: 0.5rem 0 0.25rem">
-              💭 The Idea Behind It
-            </h3>
-            <p class="modal-desc">
-              This project reimagines cultural instruments for a new generation.
-              It transforms sound into an experience that feels both modern and
-              rooted in tradition. Nada Nusantara celebrates the living rhythm
-              of Indonesian music, showing how culture can evolve while keeping
-              its spirit alive.
-            </p>
           </div>
         </article>
       </section>
@@ -198,7 +194,7 @@
         aria-labelledby="audioNoticeTitle"
         hidden
       >
-        <div class="modal-backdrop"></div>
+        <div class="modal-backdrop" aria-hidden="true"></div>
         <div class="notice-card">
           <h2 id="audioNoticeTitle">
             Heads up: this site can play instrument audio
@@ -213,17 +209,24 @@
             <span>Don’t show this again</span>
           </label>
           <div class="notice-actions">
-            <button id="audioNoticeMute" class="btn">Start Muted</button>
-            <button id="audioNoticeOk" class="btn">Accept</button>
+            <button id="audioNoticeMute" class="btn" type="button">
+              Start Muted
+            </button>
+            <button id="audioNoticeOk" class="btn" type="button">Accept</button>
           </div>
         </div>
       </div>
 
-      <!-- BOTTOM-LEFT VOLUME CLUSTER (unchanged markup) -->
+      <!-- BOTTOM-LEFT VOLUME CLUSTER -->
       <aside class="volume-cluster" aria-label="Volume controls">
         <!-- Master -->
         <div class="vol-control" data-kind="master">
-          <button id="volMasterBtn" class="vol-orb" aria-label="Master volume">
+          <button
+            id="volMasterBtn"
+            class="vol-orb"
+            aria-label="Master volume"
+            type="button"
+          >
             <span class="vol-liquid" aria-hidden="true"></span>
             <span class="vol-icon" aria-hidden="true">🎚</span>
           </button>
@@ -236,6 +239,7 @@
             id="volInstrBtn"
             class="vol-orb"
             aria-label="Instrument audio volume"
+            type="button"
           >
             <span class="vol-liquid" aria-hidden="true"></span>
             <span class="vol-icon" aria-hidden="true">🎶</span>
@@ -246,7 +250,6 @@
 
       <!-- AUDIO TAGS -->
       <audio id="player" preload="auto" crossorigin="anonymous"></audio>
-      <!-- Removed lobby element usage in JS; keeping here does no harm -->
       <audio
         id="lobby"
         src="audio/lobbyMusic.mp3"
